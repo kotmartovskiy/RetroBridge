@@ -12,6 +12,7 @@ from core.profiles import (
     ProfileError,
     ProfileRegistry,
     ProbeResult,
+    intersect_profiles,
     select_profile,
 )
 from tests.conftest import EXAMPLES
@@ -180,6 +181,34 @@ def test_selection_unknown_profile_id_ignored(registry):
 def test_selection_zero_score_ignored(registry):
     probes = [ProbeResult(score=0, profile_id="j2me-midp2-generic")]
     assert select_profile(registry, probes).id == DEFAULT_PROFILE_ID
+
+
+def test_intersection_is_conservative(registry):
+    generic = registry.get("generic-constrained")
+    j2me = registry.get("j2me-midp2-generic")
+    effective = intersect_profiles(generic, j2me)
+
+    assert effective.id == "effective-generic-constrained-j2me-midp2-generic"
+    assert effective.platform.family == "generic"
+    assert effective.transport.keep_alive is False
+    assert effective.transport.max_request_header_bytes == 2048
+    assert effective.content.max_body_bytes == 32768
+    assert effective.content.default_charset == "iso-8859-1"
+    assert effective.session.cookie_mode == "none"
+    assert effective.session.scripting is False
+    assert effective.capabilities["transport"]["https"] is False
+
+
+def test_intersection_rejects_incompatible_transport(registry):
+    generic = registry.get("generic-constrained")
+    incompatible = CapabilityProfile.from_dict({
+        **generic.raw,
+        "id": "incompatible",
+        "transport": {**generic.raw["transport"], "protocols": ["wsp"]},
+        "content": {**generic.raw["content"], "charsets": ["utf-8"], "default_charset": "utf-8"},
+    })
+    with pytest.raises(ProfileError, match="common transport protocol"):
+        intersect_profiles(generic, incompatible)
 
 
 def test_adapter_probe_selects_by_user_agent(device, registry):

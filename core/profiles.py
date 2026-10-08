@@ -365,6 +365,121 @@ class ProfileRegistry:
         return profile_id in self._profiles
 
 
+def _ordered_intersection(values: Sequence[Sequence[str]]) -> Tuple[str, ...]:
+    if not values:
+        return ()
+    current = list(values[0])
+    for candidate in values[1:]:
+        allowed = set(candidate)
+        current = [item for item in current if item in allowed]
+    return tuple(current)
+
+
+def _min_int(values: Sequence[int]) -> int:
+    return min(values)
+
+
+def _intersect_capability_values(values: Sequence[Any]) -> Any:
+    """Conservative recursive intersection for declarative capability data.
+
+    Booleans use AND, numeric limits use MIN, lists use ordered intersection,
+    dictionaries recurse, and scalar values must agree or the first value wins.
+    The function is intentionally conservative: it never upgrades a capability.
+    """
+    if not values:
+        return None
+    first = values[0]
+    if all(isinstance(value, bool) for value in values):
+        return all(values)
+    if all(isinstance(value, int) and not isinstance(value, bool) for value in values):
+        return min(values)
+    if all(isinstance(value, list) for value in values):
+        return [item for item in first if all(item in value for value in values[1:])]
+    if all(isinstance(value, dict) for value in values):
+        keys = set(first)
+        for value in values[1:]:
+            keys &= set(value)
+        return {key: _intersect_capability_values([value[key] for value in values]) for key in sorted(keys)}
+    if all(value == first for value in values):
+        return first
+    return first
+
+
+def intersect_profiles(*profiles: CapabilityProfile) -> CapabilityProfile:
+    """Return the safest common profile for all supplied constraints.
+
+    This is used after profile selection when multiple observations constrain
+    the same session. It only removes capabilities; it never adds one.
+    """
+    if not profiles:
+        raise ProfileError("at least one profile is required for intersection")
+
+    protocols = _ordered_intersection([p.transport.protocols for p in profiles])
+    if not protocols:
+        raise ProfileError("profiles have no common transport protocol")
+
+    markup = _ordered_intersection([p.content.markup_profiles for p in profiles])
+    charsets = _ordered_intersection([p.content.charsets for p in profiles])
+    media_types = _ordered_intersection([p.content.media_types for p in profiles])
+    if not charsets:
+        raise ProfileError("profiles have no common charset")
+    default_charset = profiles[0].content.default_charset
+    if default_charset not in charsets:
+        default_charset = charsets[0]
+
+    cookie_rank = {"none": 0, "header-only": 1, "minimal": 2}
+    cookie_mode = min((p.session.cookie_mode for p in profiles), key=lambda x: cookie_rank[x])
+    redirect_mode = "manual" if any(p.session.redirect_mode == "manual" for p in profiles) else "gateway-follow"
+
+    base = profiles[0]
+    transport = TransportProfile(
+        protocols=protocols,
+        keep_alive=all(p.transport.keep_alive for p in profiles),
+        max_concurrent_connections=_min_int([p.transport.max_concurrent_connections for p in profiles]),
+        max_request_header_bytes=_min_int([p.transport.max_request_header_bytes for p in profiles]),
+        max_response_header_bytes=_min_int([p.transport.max_response_header_bytes for p in profiles]),
+        read_timeout_ms=_min_int([p.transport.read_timeout_ms for p in profiles]),
+        write_timeout_ms=_min_int([p.transport.write_timeout_ms for p in profiles]),
+    )
+    content = ContentProfile(
+        markup_profiles=markup,
+        charsets=charsets,
+        default_charset=default_charset,
+        media_types=media_types,
+        max_body_bytes=_min_int([p.content.max_body_bytes for p in profiles]),
+        chunked_responses=all(p.content.chunked_responses for p in profiles),
+        supports_content_length=all(p.content.supports_content_length for p in profiles),
+    )
+    device = DeviceProfile(
+        viewport_width=_min_int([p.device.viewport_width for p in profiles]),
+        viewport_height=_min_int([p.device.viewport_height for p in profiles]),
+        color_depth=_min_int([p.device.color_depth for p in profiles]),
+        image_formats=_ordered_intersection([p.device.image_formats for p in profiles]),
+        image_max_bytes=_min_int([p.device.image_max_bytes for p in profiles]),
+    )
+    capabilities = _intersect_capability_values([p.capabilities for p in profiles])
+    identity = base.platform if all(p.platform == base.platform for p in profiles) else PlatformIdentity()
+    quirks = tuple(dict.fromkeys(q for p in profiles for q in p.quirks))
+    return CapabilityProfile(
+        id="effective-" + "-".join(p.id for p in profiles),
+        description="Conservative intersection of: " + ", ".join(p.id for p in profiles),
+        transport=transport,
+        content=content,
+        session=SessionProfile(
+            cookie_mode=cookie_mode,
+            redirect_mode=redirect_mode,
+            max_redirects=_min_int([p.session.max_redirects for p in profiles]),
+            scripting=all(p.session.scripting for p in profiles),
+        ),
+        device=device,
+        platform=identity,
+        capabilities=capabilities,
+        quirks=quirks,
+        version=base.version,
+        raw={"effective_from": [p.id for p in profiles]},
+    )
+
+
 def select_profile(
     registry: ProfileRegistry, probes: Sequence[ProbeResult]
 ) -> CapabilityProfile:

@@ -64,7 +64,8 @@ all fixtures green in CI; no secret appears in any response or log in the redact
 - [x] Platform capability catalog added in `examples/platform-matrix.json`
 - [x] Platform/generation matrix documented in `docs/PLATFORM_MATRIX.md`
 - [x] Java ME profile explicitly identifies CLDC/MIDP generation and capability data
-- [ ] Capability intersection / effective-profile engine
+- [x] Capability intersection / effective-profile engine
+- [x] Conservative intersection tests for transport, limits, charset, session and declarative capabilities
 - [ ] Shared platform/probe fixture schema
 - [ ] Profile authoring guide updated around capability-first decisions
 
