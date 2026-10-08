@@ -46,6 +46,7 @@ def test_unsupported_scheme_rejected():
 def test_default_plan_is_phase1_stages():
     assert DEFAULT_PLAN == (
         "media-type",
+        "markup-downconvert",
         "charset",
         "script-strip",
         "size",

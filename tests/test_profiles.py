@@ -39,9 +39,9 @@ def minimal(**overrides):
 
 
 def test_registry_loads_example_profiles(registry):
-    assert registry.ids() == ("generic-constrained", "j2me-midp2-generic")
+    assert registry.ids() == ("chtml-constrained", "generic-constrained", "j2me-midp2-generic", "wap-wml-classic", "xhtml-mp-constrained")
     assert registry.default.id == DEFAULT_PROFILE_ID
-    assert len(registry) == 2
+    assert len(registry) == 5
     assert "j2me-midp2-generic" in registry
 
 

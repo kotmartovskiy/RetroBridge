@@ -50,6 +50,7 @@ TRUNCATION_MARKER = "\n[retrobridge: response truncated]\n"
 LOCATION_MAX_CHARS = 1024
 
 STAGE_MEDIA_TYPE = "media-type"
+STAGE_MARKUP = "markup-downconvert"
 STAGE_CHARSET = "charset"
 STAGE_SCRIPT_STRIP = "script-strip"
 STAGE_SIZE = "size"
@@ -57,6 +58,7 @@ STAGE_LOCATION_REWRITE = "location-rewrite"
 
 KNOWN_STAGES = (
     STAGE_MEDIA_TYPE,
+    STAGE_MARKUP,
     STAGE_CHARSET,
     STAGE_SCRIPT_STRIP,
     STAGE_SIZE,
@@ -172,6 +174,24 @@ def stage_media_type(state: TransformState) -> None:
     for note in notes:
         state.note(note)
 
+
+def stage_markup_downconvert(state: TransformState) -> None:
+    """Stage 2 — down-convert markup to the effective profile grammar."""
+    if state.representation != "text" or not state.markup or state.text is None:
+        return
+    from .markup import downconvert
+
+    converted, content_type = downconvert(state.text, state.profile.content.markup_profiles)
+    if converted != state.text:
+        state.text = converted
+        state.body = converted.encode("utf-8", errors="replace")
+        state.markup = True
+        state.note("markup-downconverted")
+    if content_type:
+        state.content_type = content_type
+        state.headers["content-type"] = "%s; charset=%s" % (
+            content_type, state.profile.content.default_charset
+        )
 
 def stage_charset(state: TransformState) -> None:
     """Stage 3 — encode output as the profile's default charset (§5.3)."""
@@ -324,6 +344,7 @@ StageFn = Callable[[TransformState], None]
 
 STAGE_REGISTRY: Dict[str, StageFn] = {
     STAGE_MEDIA_TYPE: stage_media_type,
+    STAGE_MARKUP: stage_markup_downconvert,
     STAGE_CHARSET: stage_charset,
     STAGE_SCRIPT_STRIP: stage_script_strip,
     STAGE_SIZE: stage_size,

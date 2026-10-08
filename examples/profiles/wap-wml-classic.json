@@ -1,0 +1,12 @@
+{
+  "schema": "retrobridge/capability-profile@1",
+  "id": "wap-wml-classic",
+  "description": "Conservative Phase 2B wml-1.x output profile",
+  "platform": {"family":"wap","generation":"1.x","runtime":"wml","stack":"wsp-wtp-wtls"},
+  "capabilities": {"transport": {"http": true, "https": false, "chunked": false}, "content": {"javascript": false, "markup": ["wml-1.x"]}},
+  "transport": {"protocols": ["http-plain"], "keep_alive": false, "max_concurrent_connections": 1, "max_request_header_bytes": 2048, "max_response_header_bytes": 4096, "read_timeout_ms": 15000, "write_timeout_ms": 15000},
+  "content": {"markup_profiles": ["wml-1.x"], "charsets": ["iso-8859-1", "utf-8"], "default_charset": "iso-8859-1", "media_types": ["text/vnd.wap.wml", "text/plain"], "max_body_bytes": 32768, "chunked_responses": false, "supports_content_length": true},
+  "session": {"cookie_mode": "none", "redirect_mode": "manual", "max_redirects": 3, "scripting": false},
+  "device": {"viewport": {"width": 240, "height": 320}, "color_depth": 8, "image": {"max_width": 230, "max_height": 300, "max_bytes": 16384, "formats": ["gif", "png", "jpeg"]}},
+  "version": "0.1.0"
+}

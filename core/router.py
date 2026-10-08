@@ -17,6 +17,7 @@ from .policy import normalize_scheme
 #: tiny Location rewrite needed for devices to follow gateway-relative redirects.
 DEFAULT_PLAN: Tuple[str, ...] = (
     "media-type",
+    "markup-downconvert",
     "charset",
     "script-strip",
     "size",
