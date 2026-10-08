@@ -59,6 +59,10 @@ def test_generic_profile_is_conservative(registry):
 
 def test_j2me_profile_roundtrips(registry):
     profile = registry.get("j2me-midp2-generic")
+    assert profile.platform.family == "j2me"
+    assert profile.platform.generation == "cldc1.1-midp2.x"
+    assert profile.platform.runtime == "java-me"
+    assert profile.capabilities["java_me"]["midp"] == "2.x"
     assert profile.transport.keep_alive is False
     assert profile.session.scripting is False
     assert "wml-1.x" in profile.content.markup_profiles

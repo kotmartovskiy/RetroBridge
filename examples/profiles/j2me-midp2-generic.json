@@ -3,6 +3,17 @@
   "id": "j2me-midp2-generic",
   "extends": null,
   "description": "Generic MIDP 2.0 / CLDC handset, conservative defaults (docs/PROTOCOL.md §4.1)",
+  "platform": {
+    "family": "j2me",
+    "generation": "cldc1.1-midp2.x",
+    "runtime": "java-me",
+    "stack": "java-me-http"
+  },
+  "capabilities": {
+    "java_me": {"cldc": "1.1", "midp": "2.x", "jsr": []},
+    "transport": {"http": true, "https": false, "chunked": false},
+    "content": {"javascript": false, "wml": true, "xhtml_mp": false}
+  },
   "transport": {
     "protocols": ["http-plain"],
     "keep_alive": false,

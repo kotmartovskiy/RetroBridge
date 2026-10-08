@@ -1,0 +1,173 @@
+{
+  "schema": "retrobridge/platform-matrix@1",
+  "entries": [
+    {
+      "family": "wap",
+      "generation": "1.x",
+      "stack": "wsp-wtp-wtls",
+      "status": "catalogued",
+      "priority": "P0"
+    },
+    {
+      "family": "wap",
+      "generation": "2.x",
+      "stack": "http",
+      "status": "catalogued",
+      "priority": "P0"
+    },
+    {
+      "family": "j2me",
+      "generation": "cldc1.x-midp1.x",
+      "stack": "java-me",
+      "status": "catalogued",
+      "priority": "P0"
+    },
+    {
+      "family": "j2me",
+      "generation": "cldc1.1-midp2.x",
+      "stack": "java-me",
+      "status": "profiled",
+      "priority": "P0"
+    },
+    {
+      "family": "j2me",
+      "generation": "midp3.x",
+      "stack": "java-me",
+      "status": "catalogued",
+      "priority": "P0"
+    },
+    {
+      "family": "symbian",
+      "generation": "s60",
+      "stack": "http-web",
+      "status": "catalogued",
+      "priority": "P0"
+    },
+    {
+      "family": "symbian",
+      "generation": "s80",
+      "stack": "http-web",
+      "status": "catalogued",
+      "priority": "P0"
+    },
+    {
+      "family": "symbian",
+      "generation": "uiq",
+      "stack": "http-web",
+      "status": "catalogued",
+      "priority": "P0"
+    },
+    {
+      "family": "windows-ce",
+      "generation": "ce-pocketpc",
+      "stack": "http-wininet",
+      "status": "catalogued",
+      "priority": "P0"
+    },
+    {
+      "family": "windows-mobile",
+      "generation": "2003-6.5",
+      "stack": "http-wininet",
+      "status": "catalogued",
+      "priority": "P0"
+    },
+    {
+      "family": "psp",
+      "generation": "legacy-browser",
+      "stack": "http-web",
+      "status": "catalogued",
+      "priority": "P1"
+    },
+    {
+      "family": "palmos",
+      "generation": "3.x-5.x",
+      "stack": "netlib-blazer",
+      "status": "catalogued",
+      "priority": "P1"
+    },
+    {
+      "family": "blackberry-os",
+      "generation": "4.x-7.x",
+      "stack": "java-browser",
+      "status": "catalogued",
+      "priority": "P1"
+    },
+    {
+      "family": "blackberry-10",
+      "generation": "10.x",
+      "stack": "qnx-webworks",
+      "status": "catalogued",
+      "priority": "P2"
+    },
+    {
+      "family": "brew",
+      "generation": "legacy",
+      "stack": "brew",
+      "status": "catalogued",
+      "priority": "P1"
+    },
+    {
+      "family": "maemo",
+      "generation": "legacy",
+      "stack": "linux-web",
+      "status": "catalogued",
+      "priority": "P2"
+    },
+    {
+      "family": "meego",
+      "generation": "legacy",
+      "stack": "linux-web",
+      "status": "catalogued",
+      "priority": "P2"
+    },
+    {
+      "family": "webos",
+      "generation": "legacy",
+      "stack": "linux-webkit",
+      "status": "catalogued",
+      "priority": "P2"
+    },
+    {
+      "family": "bada",
+      "generation": "1.x-2.x",
+      "stack": "samsung-web",
+      "status": "catalogued",
+      "priority": "P2"
+    },
+    {
+      "family": "firefox-os",
+      "generation": "b2g-gecko",
+      "stack": "gecko-web",
+      "status": "catalogued",
+      "priority": "P2"
+    },
+    {
+      "family": "kaios",
+      "generation": "2.5",
+      "stack": "gecko-web",
+      "status": "catalogued",
+      "priority": "P1"
+    },
+    {
+      "family": "kaios",
+      "generation": "2.6",
+      "stack": "gecko-web",
+      "status": "catalogued",
+      "priority": "P1"
+    },
+    {
+      "family": "kaios",
+      "generation": "3.x",
+      "stack": "gecko-web",
+      "status": "catalogued",
+      "priority": "P1"
+    },
+    {
+      "family": "kaios",
+      "generation": "4.x",
+      "stack": "gecko-web",
+      "status": "catalogued",
+      "priority": "P1"
+    }
+  ]
+}

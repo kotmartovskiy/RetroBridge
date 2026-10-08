@@ -3,6 +3,16 @@
   "id": "generic-constrained",
   "extends": null,
   "description": "Conservative fallback for unknown legacy devices: small bodies, single-byte charset, no scripting, HTTP/1.0 behaviour",
+  "platform": {
+    "family": "generic",
+    "generation": "unknown",
+    "runtime": "unknown",
+    "stack": "http-constrained"
+  },
+  "capabilities": {
+    "transport": {"http": true, "https": false, "chunked": false},
+    "content": {"javascript": false, "markup": ["html-3.2", "plain-text"]}
+  },
   "transport": {
     "protocols": ["http-plain"],
     "keep_alive": false,

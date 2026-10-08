@@ -4,7 +4,9 @@ Phased plan from architecture bootstrap to a working local gateway. Phases are o
 dependency, not by calendar; no dates are promised. Each phase has **exit criteria** — a
 phase is done when the criteria are met, not when time passes.
 
-Current status: **Phase 0 — architecture/bootstrap** (this commit).
+Current status: **Phase 1 — core skeleton + first vertical slice implemented and hardened**.
+
+Phase 0 and Phase 1 implementation commits are complete. Phase 2 begins with capability-model consolidation before adding new protocol/device adapters.
 
 ---
 
@@ -54,7 +56,19 @@ all fixtures green in CI; no secret appears in any response or log in the redact
 
 ---
 
-## Phase 2 — Real device coverage (markup, charsets, WAP)
+## Phase 2 — Capability matrix + real device coverage
+
+### Phase 2A — Capability model consolidation
+
+- [x] Platform/generation/runtime/stack identity added to capability profiles
+- [x] Platform capability catalog added in `examples/platform-matrix.json`
+- [x] Platform/generation matrix documented in `docs/PLATFORM_MATRIX.md`
+- [x] Java ME profile explicitly identifies CLDC/MIDP generation and capability data
+- [ ] Capability intersection / effective-profile engine
+- [ ] Shared platform/probe fixture schema
+- [ ] Profile authoring guide updated around capability-first decisions
+
+### Phase 2B — Protocol and device coverage
 
 - [ ] WML/cHTML/XHTML MP output profiles in the pipeline (stage 2)
 - [ ] Charset normalization across legacy single-byte charsets (stage 3 completed)

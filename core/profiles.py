@@ -87,6 +87,14 @@ class SessionProfile:
 
 
 @dataclass(frozen=True)
+class PlatformIdentity:
+    family: str = "generic"
+    generation: str = "unknown"
+    runtime: str = "unknown"
+    stack: str = "unknown"
+
+
+@dataclass(frozen=True)
 class DeviceProfile:
     viewport_width: int = 240
     viewport_height: int = 320
@@ -103,6 +111,9 @@ class CapabilityProfile:
     content: ContentProfile
     session: SessionProfile
     device: DeviceProfile
+    platform: PlatformIdentity = field(default_factory=PlatformIdentity)
+    capabilities: Dict[str, Any] = field(default_factory=dict, repr=False, compare=False)
+    quirks: Tuple[str, ...] = ()
     schema: str = PROFILE_SCHEMA
     version: str = VERSION
     extends: Optional[str] = None
@@ -227,6 +238,29 @@ class CapabilityProfile:
         image = device_raw.get("image") or {}
         if not isinstance(image, dict):
             raise ProfileError("%s: device.image must be an object" % where)
+        platform_raw = document.get("platform") or {}
+        if not isinstance(platform_raw, dict):
+            raise ProfileError("%s: section 'platform' must be an object" % where)
+        platform = PlatformIdentity(
+            family=str(platform_raw.get("family", "generic")),
+            generation=str(platform_raw.get("generation", "unknown")),
+            runtime=str(platform_raw.get("runtime", "unknown")),
+            stack=str(platform_raw.get("stack", "unknown")),
+        )
+        for field_name, value in (
+            ("family", platform.family),
+            ("generation", platform.generation),
+            ("runtime", platform.runtime),
+            ("stack", platform.stack),
+        ):
+            if not value:
+                raise ProfileError("%s: platform.%s must be non-empty" % (where, field_name))
+
+        capabilities = document.get("capabilities") or {}
+        if not isinstance(capabilities, dict):
+            raise ProfileError("%s: field 'capabilities' must be an object" % where)
+        quirks = _str_list(document, "quirks", where, ())
+
         device = DeviceProfile(
             viewport_width=_int_field(viewport, "width", where, 240),
             viewport_height=_int_field(viewport, "height", where, 320),
@@ -246,6 +280,9 @@ class CapabilityProfile:
             content=content,
             session=session,
             device=device,
+            platform=platform,
+            capabilities=dict(capabilities),
+            quirks=quirks,
             schema=str(schema),
             version=str(document.get("version", VERSION)),
             extends=extends,
