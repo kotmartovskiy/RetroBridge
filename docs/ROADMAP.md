@@ -4,9 +4,9 @@ Phased plan from architecture bootstrap to a working local gateway. Phases are o
 dependency, not by calendar; no dates are promised. Each phase has **exit criteria** — a
 phase is done when the criteria are met, not when time passes.
 
-Current status: **Phase 1 — core skeleton + first vertical slice implemented and hardened**.
+Current status: **Phase 2B — legacy markup output and shared platform fixtures implemented; WAP/WSP adapter work in progress**.
 
-Phase 0 and Phase 1 implementation commits are complete. Phase 2 begins with capability-model consolidation before adding new protocol/device adapters.
+Phase 0 and Phase 1 implementation commits are complete. Phase 2A capability-model consolidation and the initial Phase 2B markup/fixture work are complete. The next vertical slice is WAP 1.x/WSP, followed by the remaining content and device adapters.
 
 ---
 
@@ -71,7 +71,7 @@ all fixtures green in CI; no secret appears in any response or log in the redact
 
 ### Phase 2B — Protocol and device coverage
 
-- [ ] WML/cHTML/XHTML MP output profiles in the pipeline (stage 2)
+- [x] WML/cHTML/XHTML MP output profiles in the pipeline (stage 2)
 - [ ] Charset normalization across legacy single-byte charsets (stage 3 completed)
 - [ ] Media rewriting: image resize/re-encode + placeholders (stage 4)
 - [ ] Cookie/redirect rewriting (stage 6)
@@ -165,3 +165,4 @@ until reviewed.
 | Date | Change |
 | --- | --- |
 | 2026-10-08 | Initial bootstrap: README, LICENSE, five docs, directory skeleton |
+| 2026-10-08 | Phase 2B: legacy markup profiles and WSP adapter contract clarified |

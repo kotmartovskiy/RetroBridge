@@ -4,7 +4,7 @@ This document defines the gateway's protocol surface: the device-facing wire beh
 the internal representation (IR) exchanged between adapters and core, the capability
 profile schema, transformation rules, the error model, and header policy.
 
-Everything here is **specified, not yet implemented** (Phase 0).
+This document is the normative protocol contract. Implementation status is tracked in `docs/ROADMAP.md`; sections may describe planned or partially implemented surfaces and MUST NOT be read as a claim of hardware compatibility.
 
 ---
 
@@ -53,8 +53,11 @@ device-facing surface.
   dialect.
 - Session state held by the device (deck/card variables, connectionless transaction ids)
   is tracked per session and never assumed to be visible server-side.
-- Detailed WSP opcode/transaction mapping is deferred to Phase 2 design; the contract is
-  "one WSP request → one IR request → one WSP response".
+- WSP/WTP handling is an adapter boundary: one accepted WSP request produces at most one IR request, and one IR response produces one device-legible WSP response.
+- The adapter MUST reject malformed or unsupported WSP primitives before IR construction; it MUST NOT leak WSP-specific state into the IR.
+- Connectionless WSP transaction identifiers are transport/session metadata and MUST remain outside the IR target, headers, and body.
+- WBXML/WML decoding and encoding belong to the device adapter. Core transformation stages operate on decoded content and return a representation selected by the effective capability profile.
+- WSP implementation is intentionally incremental: connectionless request/response first; connection-oriented WTP/session features remain separate until independently fixture-tested.
 
 ### 2.4 Response rules
 
