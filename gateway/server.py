@@ -17,7 +17,7 @@ from core import logging as rb_logging
 from core.errors import GatewayError, InternalError
 from core.loader import load_device_adapter, load_service_adapter
 from core.pipeline import Pipeline
-from core.policy import EgressPolicy, check_egress, check_self_target
+from core.policy import check_egress, check_self_target
 from core.profiles import ProfileRegistry, select_profile
 from core.router import route as route_request
 from core.session import SessionManager, peer_label
@@ -47,6 +47,12 @@ class Gateway:
         self.logger = rb_logging.get_logger("gateway")
         self._server: Optional[socketserver.ThreadingTCPServer] = None
         self._serving = threading.Event()
+        self.bound_port: Optional[int] = None
+
+    @property
+    def actual_port(self) -> int:
+        """The real listen port (resolves ephemeral port 0 after bind)."""
+        return self.bound_port if self.bound_port else self.config.listen.port
 
     # -- request flow ------------------------------------------------------ #
 
@@ -86,14 +92,10 @@ class Gateway:
                 check_self_target(
                     ir_request.target,
                     self.config.listen.host,
-                    self.config.listen.port,
+                    self.actual_port,
                     gateway_authority=self.config.gateway_authority,
                 )
-                decision = check_egress(
-                    ir_request.target,
-                    self.config.egress,
-                    self_addresses=self.config.self_addresses,
-                )
+                decision = check_egress(ir_request.target, self.config.egress)
                 route = route_request(ir_request)
                 if not self.service.id().startswith(route.service_adapter_id):
                     raise GatewayError(detail="routed adapter is not loaded")
@@ -112,8 +114,14 @@ class Gateway:
                 result = pipeline.run(
                     response, profile, request=ir_request, gateway_base=gateway_base
                 )
+                content_length = None
+                if method == "HEAD":
+                    upstream_length = result.meta.get("upstream_content_length")
+                    if isinstance(upstream_length, int):
+                        content_length = upstream_length
                 payload = self.device.render_ir_response(
-                    result, version=version, include_body=(method != "HEAD")
+                    result, version=version, include_body=(method != "HEAD"),
+                    content_length=content_length,
                 )
                 status = result.status
                 self._write(writer, payload)
@@ -199,14 +207,13 @@ class Gateway:
 
     def _gateway_authorities(self):
         """Authorities a device may use when addressing the gateway itself."""
-        authority = self.config.gateway_authority
+        port = self.actual_port
         host = self.config.listen.host
-        authorities = {authority}
+        authorities = {"%s:%d" % (host, port)}
         if self.config.listen.is_wildcard or self.config.listen.is_loopback:
-            port = self.config.listen.port
             for candidate in ("127.0.0.1", "localhost", "::1", "[::1]"):
                 authorities.add("%s:%d" % (candidate, port))
-        if self.config.listen.port in (80, 443):
+        if port in (80, 443):
             authorities.add(host)
         return tuple(authorities)
 
@@ -216,7 +223,10 @@ class Gateway:
         if host_header and all(ord(char) < 128 and char not in "\r\n" for char in host_header):
             authority = host_header
         else:
-            authority = self.config.gateway_authority
+            host = self.config.listen.host
+            if self.config.listen.is_wildcard:
+                host = "127.0.0.1"
+            authority = "%s:%d" % (host, self.actual_port)
         return "http://%s" % authority
 
     def _trace_fields(self, session, method, ir_request, status, bytes_out, started, profile_id) -> Dict[str, object]:
@@ -250,6 +260,7 @@ class Gateway:
 
         server = Server((self.config.listen.host, self.config.listen.port), Handler)
         self._server = server
+        self.bound_port = int(server.server_address[1])
         return server
 
     @property

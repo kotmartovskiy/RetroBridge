@@ -1,0 +1,48 @@
+# http-plain — notes
+
+Phase 1 device adapter: a conservative plain HTTP/1.0-ish listener.
+
+## What devices can send
+
+- `GET`, `HEAD`, `POST` only (anything else → 405).
+- `HTTP/1.0` and `HTTP/1.1` request lines; extra spaces tolerated; the response
+  status line mirrors the request version.
+- Request targets:
+  - proxy-style absolute form: `GET https://host/path?q HTTP/1.1`
+  - gateway path-prefix form: `GET /https://host/path?q HTTP/1.0`
+  - `//host/path` (scheme-relative) treated as `http://host/path`
+  - absolute form aimed at the gateway itself is unwrapped when the path
+    carries a scheme prefix (proxy-style devices following a rewritten
+    `Location`).
+- Bodies via `Content-Length` only; `Transfer-Encoding` is rejected (400).
+- Obs-fold (continuation lines) tolerated, bounded by total header limits.
+- Percent-encoding is decoded strictly: malformed sequences are rejected (400),
+  never guessed.
+
+## Limits (listener hard caps, config-driven)
+
+| Limit | Default | Failure |
+| --- | --- | --- |
+| request line bytes | 2048 | 431 |
+| header line bytes | 2048 | 431 |
+| header count | 64 | 431 |
+| total header bytes | 8192 | 431 |
+| body bytes | 65536 | 413 |
+
+Profile limits (e.g. `generic-constrained` header budget of 2048) are enforced
+on top at IR construction time.
+
+## Responses
+
+- `Connection: close` always; no chunked responses; `Content-Length` always
+  emitted (except 204).
+- Only the PROTOCOL §6 allowlist is emitted; header values are scrubbed of
+  CR/LF/NUL (response-splitting defence).
+- Errors are tiny ASCII bodies: `Code: text` + `trace: <id>` — no paths, no
+  stack traces, no internal hostnames.
+
+## Quirks still unverified
+
+Real-device fixtures (Pocket IE, S60, PSP quirks) are Phase 2/3 work; probe
+rules here are intentionally generic (`MIDP`/`J2ME` UA → `j2me-midp2-generic`,
+otherwise `generic-constrained`).

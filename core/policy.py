@@ -13,7 +13,7 @@ import ipaddress
 import re
 import socket
 from dataclasses import dataclass
-from typing import Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from typing import Callable, Dict, Iterable, List, Mapping, Optional, Tuple
 
 from .errors import MethodNotAllowed, PolicyDenied
 from .ir import Target
@@ -206,12 +206,13 @@ def check_egress(
     target: Target,
     policy: EgressPolicy,
     resolver: Optional[Resolver] = None,
-    self_addresses: Sequence[str] = (),
 ) -> EgressDecision:
     """Full outbound check for one target; raises :class:`PolicyDenied`.
 
-    Order: scheme → port → host allowlist → self-target guard → DNS →
-    address class. Returns the first resolved IP pinned for connection.
+    Order: scheme → port → host allowlist → DNS → address class. The
+    "don't fetch yourself" rule lives in :func:`check_self_target` (host+port
+    aware), so operators may deliberately allowlist loopback origins without
+    the gateway being able to loop back into its own listener.
     """
     scheme = normalize_scheme(target.scheme)
     if scheme not in policy.allowed_schemes:
@@ -233,8 +234,6 @@ def check_egress(
         raise PolicyDenied("no hosts are allowlisted", detail="allowed_hosts=()")
     if not policy.allows_host(host):
         raise PolicyDenied("host is not allowlisted", detail="host=%r" % host)
-    if self_addresses and host in {entry.lower().rstrip(".") for entry in self_addresses}:
-        raise PolicyDenied("refusing to fetch the gateway itself", detail="self_target")
 
     addresses = resolve_host(host, target.port, resolver=resolver)
     if policy.deny_private_ranges:

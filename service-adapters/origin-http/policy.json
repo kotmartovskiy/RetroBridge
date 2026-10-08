@@ -1,0 +1,20 @@
+{
+  "id": "origin-http",
+  "adapter": "origin-http/1.0",
+  "egress": {
+    "allowed_schemes": ["https"],
+    "allowed_hosts": [],
+    "allowed_ports": [80, 443],
+    "deny_private_ranges": true
+  },
+  "methods": ["GET", "HEAD", "POST"],
+  "limits": {
+    "max_body_bytes": 1048576,
+    "timeout_s": 10.0
+  },
+  "auth": "none",
+  "secrets": [],
+  "compliance": {
+    "tos_reference": null
+  }
+}

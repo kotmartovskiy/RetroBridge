@@ -557,8 +557,13 @@ def render_response(
     body: bytes,
     version: str = "HTTP/1.0",
     include_body: bool = True,
+    content_length: Optional[int] = None,
 ) -> bytes:
-    """Serialize one device-facing response with ``Connection: close``."""
+    """Serialize one device-facing response with ``Connection: close``.
+
+    ``content_length`` overrides the computed length (HEAD responses mirror the
+    origin's declared length for the equivalent GET).
+    """
     if version not in ("HTTP/1.0", "HTTP/1.1"):
         version = "HTTP/1.0"
     reason = _REASONS.get(status, "Status")
@@ -580,7 +585,9 @@ def render_response(
     if content_type and _charset_applies(content_type) and "charset=" not in content_type.lower():
         clean["content-type"] = content_type + "; charset=us-ascii"
     if not no_body_status:
-        clean["content-length"] = str(len(body))
+        if content_length is None:
+            content_length = len(body)
+        clean["content-length"] = str(max(0, int(content_length)))
     clean["connection"] = "close"
 
     emitted = set()
@@ -624,7 +631,10 @@ def render_failure(
 
 
 def render_ir_response(
-    response: IrResponse, version: str = "HTTP/1.0", include_body: bool = True
+    response: IrResponse,
+    version: str = "HTTP/1.0",
+    include_body: bool = True,
+    content_length: Optional[int] = None,
 ) -> bytes:
     """Render a post-pipeline IR response for the device."""
     return render_response(
@@ -633,6 +643,7 @@ def render_ir_response(
         response.body,
         version=version,
         include_body=include_body,
+        content_length=content_length,
     )
 
 

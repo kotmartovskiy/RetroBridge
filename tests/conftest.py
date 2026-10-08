@@ -279,3 +279,56 @@ def split_response(payload: bytes) -> Tuple[bytes, bytes]:
     head, sep, body = payload.partition(b"\r\n\r\n")
     assert sep, "response is missing header terminator"
     return head, body
+
+
+def parse_http_response(payload: bytes) -> Dict[str, object]:
+    """Parse a raw device-facing response into {version, status, headers, body}."""
+    head, body = split_response(payload)
+    lines = head.decode("latin-1").split("\r\n")
+    version, _, status_text = lines[0].partition(" ")
+    status_code, _, reason = status_text.partition(" ")
+    headers: Dict[str, str] = {}
+    for line in lines[1:]:
+        if ":" not in line:
+            continue
+        name, _, value = line.partition(":")
+        headers[name.strip().lower()] = value.strip()
+    return {
+        "version": version,
+        "status": int(status_code),
+        "reason": reason,
+        "headers": headers,
+        "body": body,
+    }
+
+
+class GatewayLogCapture:
+    """Captures JSON log lines from the gateway logger for redaction asserts."""
+
+    def __init__(self) -> None:
+        self.stream = io.StringIO()
+        import logging as _logging
+
+        from core import logging as rb_logging
+
+        self._handler = _logging.StreamHandler(self.stream)
+        self._handler.setFormatter(rb_logging.JsonFormatter())
+        self._logger = _logging.getLogger("retrobridge")
+        self._logger.addHandler(self._handler)
+
+    def __enter__(self) -> "GatewayLogCapture":
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self._logger.removeHandler(self._handler)
+
+    @property
+    def text(self) -> str:
+        return self.stream.getvalue()
+
+    def events(self) -> List[dict]:
+        return [json.loads(line) for line in self.text.splitlines() if line.strip()]
+
+
+def capture_gateway_log() -> GatewayLogCapture:
+    return GatewayLogCapture()

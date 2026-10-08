@@ -1,0 +1,31 @@
+# origin-http — notes
+
+Baseline Phase 1 service adapter: one bounded fetch of an allowlisted origin.
+
+## Behaviour
+
+- `prepare()` is pure: origin-form target, `Host`, `User-Agent` (device's, else
+  the gateway's), `Accept-Encoding: identity`, `Connection: close`.
+- `execute()` is the only I/O point:
+  - connects to the **IP that passed egress policy** (pinned) while TLS SNI and
+    certificate verification use the requested hostname;
+  - upstream TLS is the Python default context (current TLS, current trust
+    store) — never weakened to suit a device;
+  - response headers are size-capped and allowlisted before entering the IR;
+  - response body is read up to `max_response_bytes` (truncation is flagged);
+  - `gzip`/`deflate` responses are decoded within the same bound; any other
+    `Content-Encoding` is a failure, not a passthrough;
+  - redirects are **never followed** — the 3xx is handed to the device with a
+    gateway URL, so egress policy is re-checked on every hop.
+- `allowed_schemes` defaults to `["https"]`; `http` is opt-in via config.
+
+## Policy
+
+`policy.json` mirrors `DEFAULT_EGRESS` in `adapter.py` (a test keeps them in
+sync). Host allowlist and private-range blocking are deployment config — this
+adapter is not an open proxy.
+
+## Status
+
+Level 2+ ("Probed"/"Functional" against local fakes) — see `docs/DEVICE_ADAPTERS.md`
+§5 for the support ladder. No live-Internet claims are made for this adapter.

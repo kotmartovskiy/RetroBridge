@@ -10,7 +10,7 @@ import json
 import os
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Tuple
+from typing import Any, Mapping, Optional, Tuple
 
 from core.logging import LEVELS
 from core.policy import EgressPolicy, validate_schemes

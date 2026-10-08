@@ -11,11 +11,12 @@ from __future__ import annotations
 
 import gzip
 import http.client
+import io
 import socket
 import ssl
 import time
 import zlib
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from core.errors import PolicyDenied, UpstreamFailure, UpstreamTimeout
@@ -163,7 +164,7 @@ def _decode_bounded(data: bytes, encoding: str, limit: int) -> Tuple[bytes, bool
     """Decompress within ``limit``; returns (bytes, truncated)."""
     try:
         if encoding in ("gzip", "x-gzip"):
-            with gzip.GzipFile(fileobj=__import__("io").BytesIO(data)) as handle:
+            with gzip.GzipFile(fileobj=io.BytesIO(data)) as handle:
                 out = handle.read(limit + 1)
         else:  # deflate
             decompressor = zlib.decompressobj()
@@ -261,6 +262,9 @@ def execute(outbound: OutboundRequest, ctx: AdapterContext) -> IrResponse:
             "bytes_in": len(data),
             "upstream_status": status,
         }
+        upstream_length = raw_headers.get("content-length", "")
+        if upstream_length.isdigit():
+            meta["upstream_content_length"] = int(upstream_length)
         if truncated:
             meta["upstream_truncated"] = True
         return IrResponse(status=status, headers=headers_out, body=data, meta=meta)
