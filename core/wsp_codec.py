@@ -1,8 +1,7 @@
-"""Bounded WSP connectionless PDU codec.
+"""Bounded connectionless WSP request/reply codec.
 
-Phase 2B scope: decode/encode the WSP connectionless envelope needed for a
-minimal GET/REPLY bridge. Header-field and WBXML semantics stay at explicit
-adapter boundaries; no connection-oriented WTP session state is implemented.
+Only the WSP PDU fields needed for a minimal GET/REPLY bridge are implemented.
+Connection-oriented WTP/WSP session state is deliberately outside this module.
 """
 from __future__ import annotations
 
@@ -10,11 +9,12 @@ from dataclasses import dataclass
 from typing import Tuple
 
 MAX_PDU_BYTES = 65536
+MAX_URI_BYTES = 4096
 MAX_HEADER_BYTES = 16384
 MAX_BODY_BYTES = 49152
 
 PDU_GET = 0x40
-PDU_REPLY = 0x44
+PDU_REPLY = 0x04
 
 
 class WspCodecError(ValueError):
@@ -22,16 +22,23 @@ class WspCodecError(ValueError):
 
 
 @dataclass(frozen=True)
-class WspPdu:
+class WspGet:
     transaction_id: int
-    pdu_type: int
-    headers: bytes
-    body: bytes
+    uri: bytes
+    headers: bytes = b""
+
+
+@dataclass(frozen=True)
+class WspReply:
+    transaction_id: int
+    status: int
+    headers: bytes = b""
+    body: bytes = b""
 
 
 def _read_uintvar(data: bytes, offset: int) -> Tuple[int, int]:
     value = 0
-    for count in range(5):
+    for _ in range(5):
         if offset >= len(data):
             raise WspCodecError("truncated uintvar")
         byte = data[offset]
@@ -57,48 +64,72 @@ def _write_uintvar(value: int) -> bytes:
     return bytes(out)
 
 
-def decode_pdu(data: bytes, *, max_pdu_bytes: int = MAX_PDU_BYTES) -> WspPdu:
-    if len(data) > max_pdu_bytes:
+def _check_pdu_size(data: bytes, limit: int) -> None:
+    if len(data) > limit:
         raise WspCodecError("PDU exceeds configured limit")
-    if len(data) < 3:
-        raise WspCodecError("truncated WSP PDU")
-    transaction_id = data[0]
-    pdu_type = data[1]
-    header_len, offset = _read_uintvar(data, 2)
+
+
+def decode_get(data: bytes, *, max_pdu_bytes: int = MAX_PDU_BYTES) -> WspGet:
+    _check_pdu_size(data, max_pdu_bytes)
+    if len(data) < 3 or data[1] != PDU_GET:
+        raise WspCodecError("expected WSP GET.req")
+    uri_len, offset = _read_uintvar(data, 2)
+    if uri_len > MAX_URI_BYTES:
+        raise WspCodecError("URI exceeds configured limit")
+    end_uri = offset + uri_len
+    if end_uri > len(data):
+        raise WspCodecError("truncated WSP GET URI")
+    uri = data[offset:end_uri]
+    headers = data[end_uri:]
+    if len(headers) > MAX_HEADER_BYTES:
+        raise WspCodecError("WSP header block exceeds limit")
+    return WspGet(data[0], uri, headers)
+
+
+def encode_get(pdu: WspGet, *, max_pdu_bytes: int = MAX_PDU_BYTES) -> bytes:
+    _validate_tid(pdu.transaction_id)
+    if len(pdu.uri) > MAX_URI_BYTES:
+        raise WspCodecError("URI exceeds configured limit")
+    if len(pdu.headers) > MAX_HEADER_BYTES:
+        raise WspCodecError("WSP header block exceeds limit")
+    data = bytes((pdu.transaction_id, PDU_GET))
+    data += _write_uintvar(len(pdu.uri)) + pdu.uri + pdu.headers
+    _check_pdu_size(data, max_pdu_bytes)
+    return data
+
+
+def decode_reply(data: bytes, *, max_pdu_bytes: int = MAX_PDU_BYTES) -> WspReply:
+    _check_pdu_size(data, max_pdu_bytes)
+    if len(data) < 4 or data[1] != PDU_REPLY:
+        raise WspCodecError("expected WSP Reply")
+    status = data[2]
+    header_len, offset = _read_uintvar(data, 3)
     if header_len > MAX_HEADER_BYTES:
         raise WspCodecError("WSP header block exceeds limit")
     end = offset + header_len
     if end > len(data):
-        raise WspCodecError("truncated WSP header block")
+        raise WspCodecError("truncated WSP reply headers")
     headers = data[offset:end]
     body = data[end:]
     if len(body) > MAX_BODY_BYTES:
-        raise WspCodecError("WSP body exceeds limit")
-    return WspPdu(transaction_id, pdu_type, headers, body)
+        raise WspCodecError("WSP reply body exceeds limit")
+    return WspReply(data[0], status, headers, body)
 
 
-def encode_pdu(pdu: WspPdu, *, max_pdu_bytes: int = MAX_PDU_BYTES) -> bytes:
-    if not 0 <= pdu.transaction_id <= 255:
-        raise WspCodecError("transaction id out of range")
-    if not 0 <= pdu.pdu_type <= 255:
-        raise WspCodecError("PDU type out of range")
+def encode_reply(pdu: WspReply, *, max_pdu_bytes: int = MAX_PDU_BYTES) -> bytes:
+    _validate_tid(pdu.transaction_id)
+    if not 0 <= pdu.status <= 255:
+        raise WspCodecError("status out of range")
     if len(pdu.headers) > MAX_HEADER_BYTES:
         raise WspCodecError("WSP header block exceeds limit")
     if len(pdu.body) > MAX_BODY_BYTES:
         raise WspCodecError("WSP body exceeds limit")
-    encoded = bytes((pdu.transaction_id, pdu.pdu_type))
-    encoded += _write_uintvar(len(pdu.headers)) + pdu.headers + pdu.body
-    if len(encoded) > max_pdu_bytes:
-        raise WspCodecError("encoded PDU exceeds configured limit")
-    return encoded
+    data = bytes((pdu.transaction_id, PDU_REPLY, pdu.status))
+    data += _write_uintvar(len(pdu.headers)) + pdu.headers + pdu.body
+    _check_pdu_size(data, max_pdu_bytes)
+    return data
 
 
-def decode_get(data: bytes) -> WspPdu:
-    pdu = decode_pdu(data)
-    if pdu.pdu_type != PDU_GET:
-        raise WspCodecError("expected WSP GET.req")
-    return pdu
-
-
-def encode_reply(transaction_id: int, headers: bytes, body: bytes) -> bytes:
-    return encode_pdu(WspPdu(transaction_id, PDU_REPLY, headers, body))
+def _validate_tid(transaction_id: int) -> None:
+    if not 0 <= transaction_id <= 255:
+        raise WspCodecError("transaction id out of range")

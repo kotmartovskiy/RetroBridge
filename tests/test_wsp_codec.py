@@ -4,55 +4,66 @@ from core.wsp_codec import (
     PDU_GET,
     PDU_REPLY,
     WspCodecError,
-    WspPdu,
+    WspGet,
+    WspReply,
     decode_get,
-    decode_pdu,
-    encode_pdu,
+    decode_reply,
+    encode_get,
     encode_reply,
 )
 
 
-def test_connectionless_get_round_trip():
-    raw = encode_pdu(WspPdu(7, PDU_GET, b"\x00\x01", b"/index.wml"))
-    pdu = decode_get(raw)
-    assert pdu == WspPdu(7, PDU_GET, b"\x00\x01", b"/index.wml")
+def test_get_round_trip():
+    pdu = WspGet(7, b"http://example.test/a", b"\x01\x02")
+    assert decode_get(encode_get(pdu)) == pdu
 
 
-def test_reply_preserves_transaction_id():
-    raw = encode_reply(19, b"\x01", b"ok")
-    assert decode_pdu(raw) == WspPdu(19, PDU_REPLY, b"\x01", b"ok")
+def test_reply_round_trip():
+    pdu = WspReply(19, 0x20, b"server\x00", b"body")
+    assert decode_reply(encode_reply(pdu)) == pdu
 
 
-def test_uintvar_boundary():
-    raw = encode_pdu(WspPdu(1, PDU_GET, b"a" * 128, b""))
-    assert decode_pdu(raw).headers == b"a" * 128
+def test_get_uses_uri_length_not_header_length():
+    raw = bytes((1, PDU_GET, 3)) + b"/x?" + b"headers"
+    assert decode_get(raw) == WspGet(1, b"/x?", b"headers")
 
 
-@pytest.mark.parametrize(
-    "raw",
-    [
-        b"",
-        b"\x01",
-        b"\x01\x40",
-        b"\x01\x40\x81",
-        b"\x01\x40\x05abc",
-    ],
-)
-def test_malformed_pdus_are_rejected(raw):
+def test_reply_header_length_is_uintvar():
+    pdu = WspReply(1, 0x20, b"x" * 128, b"")
+    assert decode_reply(encode_reply(pdu)) == pdu
+
+
+@pytest.mark.parametrize("raw", [
+    b"", b"\x01", b"\x01\x40", b"\x01\x40\x81", b"\x01\x40\x05abc",
+])
+def test_malformed_get_is_rejected(raw):
     with pytest.raises(WspCodecError):
-        decode_pdu(raw)
+        decode_get(raw)
 
 
-def test_wrong_pdu_type_rejected_by_get_decoder():
+@pytest.mark.parametrize("raw", [
+    b"", b"\x01\x04", b"\x01\x04\x20", b"\x01\x04\x20\x81", b"\x01\x04\x20\x05abc",
+])
+def test_malformed_reply_is_rejected(raw):
     with pytest.raises(WspCodecError):
-        decode_get(encode_reply(1, b"", b""))
+        decode_reply(raw)
 
 
-def test_oversized_header_rejected():
+def test_wrong_pdu_type_rejected():
     with pytest.raises(WspCodecError):
-        encode_pdu(WspPdu(1, PDU_GET, b"x" * 16385, b""))
+        decode_get(encode_reply(WspReply(1, 0x20)))
+
+
+def test_oversized_uri_rejected():
+    with pytest.raises(WspCodecError):
+        encode_get(WspGet(1, b"x" * 4097))
+
+
+def test_oversized_headers_rejected():
+    with pytest.raises(WspCodecError):
+        encode_reply(WspReply(1, 0x20, b"x" * 16385))
 
 
 def test_oversized_body_rejected():
     with pytest.raises(WspCodecError):
-        encode_pdu(WspPdu(1, PDU_GET, b"", b"x" * 49153))
+        encode_reply(WspReply(1, 0x20, b"", b"x" * 49153))
