@@ -384,7 +384,7 @@ def test_j2me_user_agent_selects_j2me_profile(gateway, origin):
             request_bytes("GET", "/http://127.0.0.1:%d/hello" % origin.port,
                           headers=[("User-Agent", "Nokia6680/1.0 MIDP/2.0 Profile/MIDP-2.0")]),
         )
-    events = [e for e in log_capture.events() if e["event"] == "request"]
+    events = log_capture.wait_for_event("request")
     assert events and events[0]["profile"] == "j2me-midp2-generic"
 
 

@@ -1,0 +1,9 @@
+{
+  "schema": "retrobridge/platform-probe-fixture@1",
+  "id": "generic-constrained-plain-http",
+  "platform": {"family": "generic", "generation": "unknown", "runtime": "unknown", "stack": "http-plain"},
+  "observations": {"transport": "http-plain", "http_version": "HTTP/1.0", "user_agent": "Lynx/2.8"},
+  "expected_profile": "generic-constrained",
+  "expected_status": "probed",
+  "notes": ["Synthetic baseline for clients without stronger family evidence."]
+}

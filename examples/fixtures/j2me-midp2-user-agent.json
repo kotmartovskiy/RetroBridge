@@ -1,0 +1,9 @@
+{
+  "schema": "retrobridge/platform-probe-fixture@1",
+  "id": "j2me-midp2-user-agent-nokia",
+  "platform": {"family": "j2me", "generation": "cldc1.1-midp2.x", "runtime": "java-me", "stack": "java-me-http"},
+  "observations": {"transport": "http-plain", "http_version": "HTTP/1.0", "user_agent": "Nokia/3.12 MIDP-2.0", "headers": {"accept": "*/*"}},
+  "expected_profile": "j2me-midp2-generic",
+  "expected_status": "probed",
+  "notes": ["Sanitized synthetic fixture; no claim of support for a specific Nokia firmware."]
+}

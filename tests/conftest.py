@@ -313,7 +313,7 @@ class GatewayLogCapture:
 
         self._handler = _logging.StreamHandler(self.stream)
         self._handler.setFormatter(rb_logging.JsonFormatter())
-        self._logger = _logging.getLogger("retrobridge")
+        self._logger = _logging.getLogger("retrobridge.gateway")
         self._logger.addHandler(self._handler)
 
     def __enter__(self) -> "GatewayLogCapture":
@@ -327,7 +327,16 @@ class GatewayLogCapture:
         return self.stream.getvalue()
 
     def events(self) -> List[dict]:
+        self._handler.flush()
         return [json.loads(line) for line in self.text.splitlines() if line.strip()]
+
+    def wait_for_event(self, event_name: str, timeout: float = 1.0) -> List[dict]:
+        deadline = time.monotonic() + timeout
+        while True:
+            events = [event for event in self.events() if event.get("event") == event_name]
+            if events or time.monotonic() >= deadline:
+                return events
+            time.sleep(0.01)
 
 
 def capture_gateway_log() -> GatewayLogCapture:

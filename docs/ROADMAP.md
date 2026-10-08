@@ -66,8 +66,8 @@ all fixtures green in CI; no secret appears in any response or log in the redact
 - [x] Java ME profile explicitly identifies CLDC/MIDP generation and capability data
 - [x] Capability intersection / effective-profile engine
 - [x] Conservative intersection tests for transport, limits, charset, session and declarative capabilities
-- [ ] Shared platform/probe fixture schema
-- [ ] Profile authoring guide updated around capability-first decisions
+- [x] Shared platform/probe fixture schema
+- [x] Profile authoring guide updated around capability-first decisions
 
 ### Phase 2B — Protocol and device coverage
 

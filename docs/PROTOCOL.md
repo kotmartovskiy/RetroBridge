@@ -164,6 +164,8 @@ acceptable if schema-conformant).
 
 ### 4.2 Selection rules
 
+Platform/probe evidence fixtures use schema retrobridge/platform-probe-fixture@1. The shared fixture contract stores normalized platform identity, sanitized observations, expected profile, and evidence status. Fixtures are validation inputs, not compatibility claims; hardware captures must be sanitized before entering the repository.
+
 1. Adapter `probe` returns a score and a suggested profile id.
 2. Highest score wins; ties resolve to the **weaker/more constrained** profile.
 3. No match → the documented `generic-constrained` profile.
