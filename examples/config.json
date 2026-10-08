@@ -1,0 +1,31 @@
+{
+  "schema": "retrobridge/gateway-config@1",
+  "listen": {
+    "host": "127.0.0.1",
+    "port": 8080
+  },
+  "limits": {
+    "max_request_line_bytes": 2048,
+    "max_header_line_bytes": 2048,
+    "max_header_count": 64,
+    "max_request_header_bytes": 8192,
+    "max_request_body_bytes": 65536,
+    "max_response_body_bytes": 1048576,
+    "max_response_header_bytes": 16384
+  },
+  "timeouts": {
+    "client_read_s": 15.0,
+    "client_write_s": 15.0,
+    "upstream_s": 10.0
+  },
+  "egress": {
+    "allowed_schemes": ["https"],
+    "allowed_hosts": ["example.com", "*.example.com"],
+    "allowed_ports": [443],
+    "deny_private_ranges": true,
+    "ca_file": null
+  },
+  "profiles_dir": "profiles",
+  "log_level": "info",
+  "diagnostics_headers": false
+}

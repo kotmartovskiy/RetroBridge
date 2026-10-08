@@ -1,0 +1,42 @@
+{
+  "schema": "retrobridge/capability-profile@1",
+  "id": "j2me-midp2-generic",
+  "extends": null,
+  "description": "Generic MIDP 2.0 / CLDC handset, conservative defaults (docs/PROTOCOL.md §4.1)",
+  "transport": {
+    "protocols": ["http-plain"],
+    "keep_alive": false,
+    "max_concurrent_connections": 1,
+    "max_request_header_bytes": 2048,
+    "max_response_header_bytes": 4096,
+    "read_timeout_ms": 15000,
+    "write_timeout_ms": 15000
+  },
+  "tls": { "device_side": "none" },
+  "content": {
+    "markup_profiles": ["html-3.2", "wml-1.x"],
+    "charsets": ["iso-8859-1", "utf-8"],
+    "default_charset": "iso-8859-1",
+    "media_types": ["text/html", "text/plain", "text/vnd.wap.wml", "image/gif", "image/png", "image/jpeg"],
+    "max_body_bytes": 65536,
+    "chunked_responses": false,
+    "supports_content_length": true
+  },
+  "session": {
+    "cookie_mode": "header-only",
+    "redirect_mode": "manual",
+    "max_redirects": 3,
+    "scripting": false
+  },
+  "device": {
+    "viewport": { "width": 240, "height": 320 },
+    "color_depth": 16,
+    "image": {
+      "max_width": 230,
+      "max_height": 300,
+      "max_bytes": 20480,
+      "formats": ["gif", "png", "jpeg"]
+    }
+  },
+  "version": "0.1.0"
+}

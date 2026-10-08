@@ -8,10 +8,11 @@ WAP feature phones, a PlayStation Portable, old consoles — and today's Interne
 It speaks the limited, aging dialect those devices actually support, and translates on the
 way to services that assume modern TLS, HTTP/1.1+, JSON APIs, and OAuth.
 
-> **Status: architecture / bootstrap.** This repository currently contains the design
-> documents and the directory skeleton. There is no functional implementation yet. Nothing
-> here is claimed to work end-to-end, and RetroBridge does **not** aim to be a transparent
-> proxy that gives a 2006 phone full modern web compatibility.
+> **Status: Phase 1 implemented.** The repository now contains the Phase 1 gateway core,
+> conservative HTTP/1.0 device adapter, HTTPS origin-fetch adapter, capability profiles,
+> transformation pipeline, egress policy, structured logging, configuration, and automated
+> tests. Phase 1 is intentionally not a full modern-web proxy and does **not** claim broad
+> legacy-device compatibility yet.
 
 ---
 
